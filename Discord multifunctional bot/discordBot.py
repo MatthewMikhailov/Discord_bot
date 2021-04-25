@@ -26,7 +26,14 @@ async def on_ready():
           + str(bot.user.id) + '&scope=bot&permissions=0')
     await bot.change_presence(activity=discord.Game(name="ONLINE"))
 
+    
+@bot.command(name="code")
+async def code(ctx):
+    if ' '.join(str(ctx.channel).split()[3:]) != str(ctx.author):
+        await ctx.channel.send('Sending you a PM!')
+    await ctx.author.send('https://github.com/MatthewMikhailov/Discord_bot.git')
 
+    
 # Shuts the bot down - only usable by the bot owner specified in config
 @bot.command(name='shutdown')
 async def shutdown(ctx):
