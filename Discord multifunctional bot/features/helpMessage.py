@@ -72,6 +72,9 @@ Will send you counted number of your example
 {0}invite_link
 Will send a personal message with the invite link of the bot.
 
+{0}code
+Will send you a github url with all bot code.
+
 {0}shutdown
 Will make the bot logout and shutdown. Will only work for owner of the bot.
 
