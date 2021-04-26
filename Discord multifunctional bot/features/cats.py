@@ -1,6 +1,10 @@
 import requests
 
 
+class Error404(Exception):
+    pass
+
+
 # Returns a link to a random cat gif
 def get_cat_gif():
     try:
@@ -8,11 +12,10 @@ def get_cat_gif():
         if cat_gif.status_code == 200:
             out = cat_gif.url
             return out
-
         else:
-            return 'Error 404. Website may be down.'
-    except:
-        return 'Error 404. Website may be down.'
+            raise Error404
+    except Error404:
+        return  'Error 404. Website may be down.'
 
 
 # Returns a link to a random cat picture or cat gif
@@ -22,8 +25,7 @@ def get_cat_picture():
         if cat_picture.status_code == 200:
             out = cat_picture.url
             return out
-
         else:
-            return 'Error 404. Website may be down.'
-    except:
+            raise Error404
+    except Error404:
         return 'Error 404. Website may be down.'
