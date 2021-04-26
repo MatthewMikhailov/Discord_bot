@@ -134,7 +134,9 @@ async def joke(ctx):
             out = random_joke.json()['value']['joke']
             await ctx.channel.send(out)
         else:
-            await ctx.channel.send('Error 404. Website may be down.')
+            raise Error404
+    except Error404:
+        await ctx.channel.send('Error 404. Website may be down.')
     except:
         await ctx.send('Sorry some troubles i cant do it now(')
 
@@ -184,6 +186,15 @@ async def cat(ctx):
 
 
 # **************** TRANSLATE COMMANDS **************** #
+
+class FormatError(Exception):
+    pass
+
+
+class Error404(Exception):
+    pass
+
+
 tr_url = "https://translated-mymemory---translation-memory.p.rapidapi.com/api/get"
 lang_pair = "ru|en"
 
@@ -208,14 +219,16 @@ languages = {
 async def translate(ctx):
     try:
         to_tranclate = ' '.join(ctx.message.content.split()[1:])
-        try:
-            global lang_pair
-            querystring = {"q": to_tranclate, "langpair": lang_pair, "de": "a@b.c", "onlyprivate": "0", "mt": "1"}
-            response = requests.request("GET", tr_url, headers=headers, params=querystring)
+        global lang_pair
+        querystring = {"q": to_tranclate, "langpair": lang_pair, "de": "a@b.c", "onlyprivate": "0", "mt": "1"}
+        response = requests.request("GET", tr_url, headers=headers, params=querystring)
+        if response.status_code == 200:
             translation = response.json()['matches'][0]['translation']
             await ctx.channel.send(translation)
-        except:
-            await ctx.channel.send("Wrong text to translate or wrong language chosen")
+        else:
+            raise Error404
+    except Error404:
+        await ctx.channel.send('Error 404. Website may be down.')
     except:
         await ctx.send('Sorry some troubles i cant do it now(')
 
@@ -224,20 +237,22 @@ async def translate(ctx):
 @bot.command(name="set_lang")
 async def set_lang(ctx):
     try:
+        if len(ctx.message.content.split()) != 3:
+            raise FormatError
+
         global languages
+        lan1 = languages[ctx.message.content.split()[1].lower()]
+        lan2 = languages[ctx.message.content.split()[2].lower()]
 
-        try:
-            lan1 = languages[ctx.message.content.split()[1].lower()]
-            lan2 = languages[ctx.message.content.split()[2].lower()]
+        global lang_pair
+        lang_pair = f'{lan1}|{lan2}'
+        await ctx.channel.send("Done!")
 
-            global lang_pair
-            lang_pair = f'{lan1}|{lan2}'
-            await ctx.channel.send("Done!")
-
-        except:
-            await ctx.channel.send("Wrong or unsupported language!"
-                                   "(you can see list of the supported languages with command list_lang)")
-            await ctx.channel.send("You may ask set_language [language from] [language to]")
+    except KeyError:
+        await ctx.channel.send("Wrong or unsupported language! "
+                               "(you can see list of the supported languages with command list_lang)")
+    except FormatError:
+        await ctx.channel.send("You may ask set_language [language from] [language to]")
     except:
         await ctx.send('Sorry some troubles i cant do it now(')
 
@@ -255,6 +270,11 @@ async def list_lang(ctx):
 
 
 # **************** VOICE COMMANDS **************** #
+
+class NoAuthorVoice(Exception):
+    pass
+
+
 # Will join the voice channel of the message author if they're in a channel
 # and the bot is not currently connected to a voice channel
 currentChannel = None
@@ -271,7 +291,9 @@ async def join(ctx):
 
             await currentChannel.connect()
         else:
-            await ctx.send('You are not in a voice channel.')
+            raise NoAuthorVoice
+    except NoAuthorVoice:
+        await ctx.send('You are not in a voice channel.')
     except:
         await ctx.send('Sorry some troubles i cant do it now(')
 
@@ -288,9 +310,11 @@ async def leave(ctx):
                 else:
                     await ctx.send('You mast be in my voice chat to do this!')
             else:
-                await ctx.send('You are not in voice chat!')
+                raise NoAuthorVoice
         else:
             await ctx.send('I am not in voice chat!')
+    except NoAuthorVoice:
+        await ctx.send('You are not in a voice channel.')
     except:
         await ctx.send('Sorry some troubles i cant do it now(')
 
@@ -343,14 +367,14 @@ class YTDLSource(discord.PCMVolumeTransformer):
             return cls(discord.FFmpegPCMAudio(source=filename, **ffmpeg_options,
                                               executable='C:/PATH_Programms/ffmpeg.exe'), data=data)
         except:
-            pass
+            return 'Sorry some troubles i cant do it now('
 
 
 # Plays from a url (almost anything youtube_dl supports)
 @bot.command(name='play')
 async def play(ctx):
-    if ctx.author.voice and ctx.author.voice.channel:
-        try:
+    try:
+        if ctx.author.voice and ctx.author.voice.channel:
             async with ctx.typing():
                 global player
                 request = ' '.join(ctx.message.content.split()[1:])
@@ -364,11 +388,16 @@ async def play(ctx):
                 await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,
                                                                     name=player.title))
                 await ctx.send(f'Now playing: {player.title}, \n {url}')
-        except discord.errors.ClientException as er:
-            print(er)
-            await ctx.send('Some troubles with player!')
-    else:
-        await ctx.send('You are not in voice chat!')
+        else:
+            raise NoAuthorVoice
+
+    except NoAuthorVoice:
+        await ctx.send('You are not in a voice channel.')
+    except discord.errors.ClientException as er:
+        print(er)
+        await ctx.send('Some troubles with player!')
+    except:
+        await ctx.send('Sorry some troubles i cant do it now(')
 
 
 # Changes the player's volume
@@ -376,7 +405,7 @@ async def play(ctx):
 async def set_volume(ctx, volume: int):
     try:
         if ctx.voice_client is None:
-            return await ctx.send("Not connected to a voice channel.")
+            return await ctx.send('I am not in voice chat!')
 
         ctx.voice_client.source.volume = volume / 100
         await ctx.send(f"Changed volume to {volume}%")
