@@ -375,19 +375,22 @@ class YTDLSource(discord.PCMVolumeTransformer):
 async def play(ctx):
     try:
         if ctx.author.voice and ctx.author.voice.channel:
-            async with ctx.typing():
-                global player
-                request = ' '.join(ctx.message.content.split()[1:])
-                results = YoutubeSearch(request, max_results=1).to_json()
-                results_dict = json.loads(results)
-                url = 'https://www.youtube.com' + results_dict['videos'][0]['url_suffix']
-                player = await YTDLSource.from_url(url, loop=bot.loop)
-                ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
-                ctx.voice_client.is_playing()
+            if currentChannel != None
+                async with ctx.typing():
+                    global player
+                    request = ' '.join(ctx.message.content.split()[1:])
+                    results = YoutubeSearch(request, max_results=1).to_json()
+                    results_dict = json.loads(results)
+                    url = 'https://www.youtube.com' + results_dict['videos'][0]['url_suffix']
+                    player = await YTDLSource.from_url(url, loop=bot.loop)
+                    ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+                    ctx.voice_client.is_playing()
 
-                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,
-                                                                    name=player.title))
-                await ctx.send(f'Now playing: {player.title}, \n {url}')
+                    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,
+                                                                        name=player.title))
+                    await ctx.send(f'Now playing: {player.title}, \n {url}')
+            else:
+                await ctx.send('I am not in voice chat! Use command join!')
         else:
             raise NoAuthorVoice
 
